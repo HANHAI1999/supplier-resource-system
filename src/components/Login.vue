@@ -28,7 +28,7 @@ function submit() {
 <template>
   <div class="login-page">
     <div class="login-card">
-      <div class="login-title">供应商资源管理系统</div>
+      <div class="login-title">联宇资源池</div>
       <div class="login-sub">请使用分配给你的账号登录</div>
       <el-form @submit.prevent="submit">
         <el-form-item>

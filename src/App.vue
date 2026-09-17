@@ -127,7 +127,7 @@ function doExport() {
   <Login v-if="!store.loggedInAccountId" @logged-in="() => {}" />
   <div v-else class="app-shell">
     <aside class="side-nav">
-      <div class="logo">供应商资源管理系统</div>
+      <div class="logo">联宇资源池</div>
       <ResourceNav
         :current-account-id="store.currentAccountId"
         :current-view-id="store.currentViewId"
