@@ -27,25 +27,37 @@ function hasField(poolKey, fieldKey, kind) {
   return (perms[poolKey][kind] || []).includes(fieldKey)
 }
 
-// 成员管理弹窗
-const memberModal = reactive({ visible: false, accountId: '', memberForm: { username: '', password: '' } })
+// 成员管理弹窗（新增成员 / 修改密码共用）
+const memberModal = reactive({ visible: false, mode: 'add', accountId: '', memberId: '', memberForm: { username: '', password: '' } })
 const showPassword = ref({})
 function openMembers(accountId) {
   memberModal.accountId = accountId
+  memberModal.mode = 'add'
+  memberModal.memberId = ''
   memberModal.memberForm = { username: '', password: '' }
+  memberModal.visible = true
+}
+function openChangePwd(accountId, member) {
+  memberModal.accountId = accountId
+  memberModal.mode = 'editPwd'
+  memberModal.memberId = member.id
+  memberModal.memberForm = { username: member.username, password: '' }
   memberModal.visible = true
 }
 const activeAccount = () => store.accounts.find((a) => a.id === memberModal.accountId)
 function submitMember() {
   const f = memberModal.memberForm
+  if (memberModal.mode === 'editPwd') {
+    if (!f.password.trim()) return ElMessage.warning('请输入新密码')
+    updateMemberPassword(memberModal.accountId, memberModal.memberId, f.password.trim())
+    memberModal.visible = false
+    ElMessage.success(`密码已修改为 ${f.password.trim()}`)
+    return
+  }
   if (!f.username.trim() || !f.password.trim()) return ElMessage.warning('请填写用户名和密码')
   addMember(memberModal.accountId, f.username.trim(), f.password.trim())
   memberModal.memberForm = { username: '', password: '' }
   ElMessage.success('成员已添加')
-}
-function resetPwd(accountId, memberId) {
-  updateMemberPassword(accountId, memberId, '123456')
-  ElMessage.success('密码已重置为 123456')
 }
 function delMember(accountId, memberId) {
   removeMember(accountId, memberId)
@@ -105,11 +117,14 @@ function submitPerm() {
     </el-table>
 
     <!-- 成员管理弹窗 -->
-    <el-dialog v-model="memberModal.visible" :title="`成员管理 · ${activeAccount()?.name || ''}`" width="560px" append-to-body>
+    <el-dialog v-model="memberModal.visible" :title="memberModal.mode === 'editPwd' ? '修改密码' : `成员管理 · ${activeAccount()?.name || ''}`" width="560px" append-to-body>
       <el-form inline style="margin-bottom: 12px">
-        <el-form-item label="用户名"><el-input v-model="memberModal.memberForm.username" style="width: 150px" /></el-form-item>
+        <el-form-item label="用户名">
+          <el-input v-model="memberModal.memberForm.username" style="width: 150px" :disabled="memberModal.mode === 'editPwd'" />
+        </el-form-item>
         <el-form-item label="密码"><el-input v-model="memberModal.memberForm.password" style="width: 150px" /></el-form-item>
-        <el-button type="primary" @click="submitMember">添加成员</el-button>
+        <el-button v-if="memberModal.mode === 'editPwd'" type="primary" @click="submitMember">保存新密码</el-button>
+        <el-button v-else type="primary" @click="submitMember">添加成员</el-button>
       </el-form>
       <el-table :data="activeAccount()?.members || []" size="small" border>
         <el-table-column prop="username" label="用户名" width="140" />
@@ -124,7 +139,7 @@ function submitPerm() {
         <el-table-column prop="createdAt" label="创建时间" width="160" />
         <el-table-column label="操作" min-width="140">
           <template #default="{ row }">
-            <el-button link type="primary" size="small" @click="resetPwd(memberModal.accountId, row.id)">重置密码</el-button>
+            <el-button link type="primary" size="small" @click="openChangePwd(memberModal.accountId, row)">修改密码</el-button>
             <el-button link type="danger" size="small" @click="delMember(memberModal.accountId, row.id)">删除</el-button>
           </template>
         </el-table-column>
