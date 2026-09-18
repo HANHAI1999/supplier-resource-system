@@ -625,9 +625,9 @@ watch(
         <div class="v detail-text">{{ s.remark }}</div>
       </div>
 
-      <div class="detail-section" v-if="canSeeField('evaluation') && s.evaluation">
+      <div class="detail-section" v-if="canSeeField('evaluation')">
         <h4>供应商评价</h4>
-        <div class="v detail-text">{{ s.evaluation }}</div>
+        <div class="v detail-text">{{ s.evaluation || '—' }}</div>
       </div>
 
       <div class="detail-section" v-if="groupVisible('exception')">
