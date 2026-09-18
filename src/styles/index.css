@@ -138,11 +138,14 @@ body {
   justify-content: flex-end;
 }
 .detail-section {
-  margin-bottom: 20px;
+  margin-bottom: 28px;
 }
 .detail-section h4 {
-  margin: 0 0 10px;
-  font-size: 14px;
+  margin: 0 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 15px;
+  font-weight: 600;
   color: #1f2937;
 }
 .detail-grid {
@@ -156,6 +159,16 @@ body {
 }
 .detail-item .v {
   color: #1f2937;
+  font-size: 14px;
+  font-weight: 500;
+}
+.detail-text {
+  background: #f8fafc;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.7;
 }
 .pop-trigger {
   height: 32px;

@@ -91,6 +91,7 @@ function startEdit() {
     warehouseList: (sup.warehouse?.list || []).map((w) => ({ ...w })),
     contacts: (sup.contacts || []).map((c) => ({ ...c })),
     remark: sup.remark || '',
+    evaluation: sup.evaluation || '',
   })
   editMode.value = true
 }
@@ -125,6 +126,7 @@ function save() {
     warehouse: { has: form.whHas, list: form.whHas ? form.warehouseList.map((w) => ({ ...w })) : [] },
     contacts: form.contacts.map((c) => ({ ...c })),
     remark: form.remark,
+    evaluation: form.evaluation,
   })
   editMode.value = false
 }
@@ -272,7 +274,7 @@ watch(
   <el-drawer :model-value="visible" size="62%" @close="emit('update:visible', false)">
     <template #header>
       <div style="display: flex; justify-content: space-between; align-items: center; width: 100%">
-        <span style="font-weight: 600">{{ s.name || '供应商详情' }}</span>
+        <span style="font-weight: 600; font-size: 22px; color: #1f2937">{{ s.name || '供应商详情' }}</span>
         <span>
           <el-button v-if="canEdit && !editMode" type="primary" size="small" @click="startEdit">编辑</el-button>
           <el-button v-if="canEdit && canSeeField('exception.desc')" size="small" @click="exVisible = true">+ 异常记录</el-button>
@@ -478,6 +480,13 @@ watch(
         <span v-else>{{ form.remark }}</span>
       </div>
 
+      <!-- 供应商评价 -->
+      <div class="detail-section" v-if="canSeeField('evaluation') && (canEditField('evaluation') || form.evaluation)">
+        <h4>供应商评价</h4>
+        <el-input v-if="canEditField('evaluation')" v-model="form.evaluation" type="textarea" :rows="2" style="max-width: 560px" placeholder="文字补充评价" />
+        <span v-else>{{ form.evaluation }}</span>
+      </div>
+
       <div style="margin-top: 12px">
         <el-button type="primary" @click="save">保存</el-button>
         <el-button @click="cancel">取消</el-button>
@@ -497,7 +506,7 @@ watch(
         </div>
         <div v-if="canSeeField('basic.intro') && s.intro" class="detail-item" style="margin-top: 8px">
           <div class="k">公司介绍</div>
-          <div class="v">{{ s.intro }}</div>
+          <div class="v detail-text">{{ s.intro }}</div>
         </div>
       </div>
 
@@ -597,7 +606,12 @@ watch(
 
       <div class="detail-section" v-if="canSeeField('remark') && s.remark">
         <h4>备注</h4>
-        <div class="v">{{ s.remark }}</div>
+        <div class="v detail-text">{{ s.remark }}</div>
+      </div>
+
+      <div class="detail-section" v-if="canSeeField('evaluation') && s.evaluation">
+        <h4>供应商评价</h4>
+        <div class="v detail-text">{{ s.evaluation }}</div>
       </div>
 
       <div class="detail-section" v-if="groupVisible('exception')">
@@ -766,5 +780,14 @@ watch(
   margin: 12px 0 8px;
   color: #1f2937;
   font-weight: 500;
+}
+/* 详情页表格表头浅灰 + Tag 降饱和（纯视觉） */
+:deep(.el-table th.el-table__cell) {
+  background: #f8fafc;
+  color: #6b7280;
+  font-weight: 500;
+}
+:deep(.el-tag) {
+  filter: saturate(0.85);
 }
 </style>
