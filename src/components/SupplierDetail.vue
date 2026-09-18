@@ -271,10 +271,19 @@ watch(
 </script>
 
 <template>
-  <el-drawer :model-value="visible" size="62%" @close="emit('update:visible', false)">
+  <el-drawer :model-value="visible" size="62%" class="supplier-detail-drawer" @close="emit('update:visible', false)">
     <template #header>
-      <div style="display: flex; justify-content: space-between; align-items: center; width: 100%">
-        <span style="font-weight: 600; font-size: 22px; color: #1f2937">{{ s.name || '供应商详情' }}</span>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%">
+        <div>
+          <div style="font-weight: 600; font-size: 22px; color: #1f2937; line-height: 1.3">{{ s.name || '供应商详情' }}</div>
+          <div style="display: flex; gap: 6px; margin-top: 8px">
+            <el-tag v-for="p in s.pools" :key="p" size="small" type="info">{{ poolName(p) }}</el-tag>
+            <el-tag
+              size="small"
+              :type="s.status === '使用中' ? 'success' : s.status === '储备' ? 'warning' : s.status === '暂停合作' ? 'danger' : 'info'"
+            >{{ s.status }}</el-tag>
+          </div>
+        </div>
         <span>
           <el-button v-if="canEdit && !editMode" type="primary" size="small" @click="startEdit">编辑</el-button>
           <el-button v-if="canEdit && canSeeField('exception.desc')" size="small" @click="exVisible = true">+ 异常记录</el-button>
@@ -286,7 +295,7 @@ watch(
     <template v-if="editMode">
       <!-- 基础信息 -->
       <div class="detail-section" v-if="groupVisible('basic')">
-        <h4>基础信息</h4>
+        <div class="detail-card-head"><h4>基础信息</h4><span class="detail-sub">供应商的核心档案信息</span></div>
         <el-form label-width="110px" style="max-width: 700px">
           <el-form-item v-if="canEditField('basic.name')" label="供应商名称" required><el-input v-model="form.name" /></el-form-item>
           <el-form-item v-else-if="canSeeField('basic.name')" label="供应商名称"><span>{{ form.name }}</span></el-form-item>
@@ -496,77 +505,84 @@ watch(
     <!-- ==================== 只读态 ==================== -->
     <template v-else>
       <div class="detail-section" v-if="groupVisible('basic')">
-        <h4>基础信息</h4>
+        <div class="detail-card-head"><h4>基础信息</h4><span class="detail-sub">供应商的核心档案信息</span></div>
         <div class="detail-grid">
           <div v-if="canSeeField('basic.name')" class="detail-item"><div class="k">供应商名称</div><div class="v">{{ s.name }}</div></div>
           <div v-if="canSeeField('basic.status')" class="detail-item"><div class="k">合作状态</div><div class="v">{{ s.status }}</div></div>
           <div v-if="canSeeField('basic.contract')" class="detail-item"><div class="k">是否签署合同</div><div class="v">{{ s.contract }}</div></div>
           <div v-if="canSeeField('basic.paymentTerms')" class="detail-item"><div class="k">供应商账期</div><div class="v">{{ s.paymentTerms }}</div></div>
           <div v-if="canSeeField('basic.country')" class="detail-item"><div class="k">国家</div><div class="v">{{ s.country }}</div></div>
-        </div>
-        <div v-if="canSeeField('basic.intro') && s.intro" class="detail-item" style="margin-top: 8px">
-          <div class="k">公司介绍</div>
-          <div class="v detail-text">{{ s.intro }}</div>
+          <div v-if="canSeeField('basic.intro') && s.intro" class="detail-item detail-item--full">
+            <div class="k">公司介绍</div>
+            <div class="v detail-text">{{ s.intro }}</div>
+          </div>
         </div>
       </div>
 
       <div class="detail-section" v-if="groupVisible('internal')">
-        <h4>内部管理</h4>
+        <div class="detail-card-head"><h4>内部管理</h4><span class="detail-sub">合作主体与内部对接人</span></div>
         <div class="detail-grid">
           <div v-if="canSeeField('internal.entity')" class="detail-item"><div class="k">合作主体</div><div class="v">{{ s.entity }}</div></div>
           <div v-if="canSeeField('internal.contact')" class="detail-item"><div class="k">内部对接人</div><div class="v">{{ contactList(s.internalContact).join('、') || '—' }}</div></div>
         </div>
       </div>
 
-      <div class="detail-section" v-if="canSeeField('pool')">
-        <h4>资源盘归属</h4>
-        <div class="v">
-          <el-tag v-for="p in s.pools" :key="p" size="small" style="margin-right: 4px">{{ poolName(p) }}</el-tag>
-          <span v-if="!s.pools || !s.pools.length" style="color: #9ca3af">—</span>
-        </div>
-      </div>
-
-      <div class="detail-section" v-if="canSeeField('regions')">
-        <h4>供应商覆盖区域</h4>
-        <div class="v">
-          <el-tag v-for="r in derivedRegions" :key="r" size="small" style="margin: 2px 4px 2px 0">{{ regionName(r) }}</el-tag>
-          <span v-if="!derivedRegions.length" style="color: #9ca3af">—</span>
-        </div>
-        <div style="color: #9ca3af; font-size: 12px; margin-top: 4px">由国内 / 美国配置组的适用区域自动汇总</div>
-      </div>
-
-      <div class="detail-section" v-if="view.kind === 'cn' && groupVisible('cnConfig')">
-        <h4>劲港资源配置</h4>
-        <el-table v-if="s.cnConfigs && s.cnConfigs.length" :data="s.cnConfigs" size="small" border>
-          <el-table-column v-if="canSeeField('cnConfig.region')" label="适用区域" width="140"><template #default="{ row }">{{ regionName(row.region) }}</template></el-table-column>
-          <el-table-column v-if="canSeeField('cnConfig.bizTypes')" label="业务类型"><template #default="{ row }">{{ row.bizTypes.join('、') || '' }}</template></el-table-column>
-          <el-table-column v-if="canSeeField('cnConfig.scenarios')" label="服务场景"><template #default="{ row }">{{ row.scenarios.join('、') || '' }}</template></el-table-column>
-          <el-table-column v-if="canSeeField('cnConfig.fbaNote') && cnColHas('fbaNote')" label="FBA 备注"><template #default="{ row }">{{ row.fbaNote || '' }}</template></el-table-column>
-          <el-table-column v-if="canSeeField('cnConfig.fbxNote') && cnColHas('fbxNote')" label="FBX 备注"><template #default="{ row }">{{ row.fbxNote || '' }}</template></el-table-column>
-          <el-table-column v-if="canSeeField('cnConfig.note') && cnColHas('note')" label="配置备注"><template #default="{ row }">{{ row.note || '' }}</template></el-table-column>
-        </el-table>
-        <p v-else style="color: #9ca3af">暂无配置</p>
-      </div>
-
-      <div class="detail-section" v-if="view.kind === 'us' && groupVisible('usConfig')">
-        <h4>美盈资源配置</h4>
-        <div class="detail-item" style="margin-bottom: 8px" v-if="canSeeField('usConfig.usPool')">
-          <div class="k">美国资源池归属</div>
-          <div class="v">
-            <el-tag v-for="p in s.usPool" :key="p" size="small" style="margin-right: 4px">{{ p }}</el-tag>
-            <span v-if="!s.usPool || !s.usPool.length" style="color: #9ca3af">—</span>
+      <div
+        class="detail-section"
+        v-if="canSeeField('pool') || canSeeField('regions') || (view.kind === 'cn' && groupVisible('cnConfig')) || (view.kind === 'us' && groupVisible('usConfig'))"
+      >
+        <div class="detail-card-head"><h4>资源信息</h4><span class="detail-sub">资源盘归属、覆盖区域与资源配置</span></div>
+        <div class="detail-grid">
+          <div class="detail-item" v-if="canSeeField('pool')">
+            <div class="k">资源盘归属</div>
+            <div class="v">
+              <el-tag v-for="p in s.pools" :key="p" size="small" style="margin-right: 4px">{{ poolName(p) }}</el-tag>
+              <span v-if="!s.pools || !s.pools.length" style="color: #9ca3af">—</span>
+            </div>
+          </div>
+          <div class="detail-item detail-item--full" v-if="canSeeField('regions')">
+            <div class="k">供应商覆盖区域</div>
+            <div class="v">
+              <el-tag v-for="r in derivedRegions" :key="r" size="small" style="margin: 2px 4px 2px 0">{{ regionName(r) }}</el-tag>
+              <span v-if="!derivedRegions.length" style="color: #9ca3af">—</span>
+              <div style="color: #9ca3af; font-size: 12px; margin-top: 4px; font-weight: 400">由国内 / 美国配置组的适用区域自动汇总</div>
+            </div>
           </div>
         </div>
-        <el-table v-if="s.abilityConfigs && s.abilityConfigs.length" :data="s.abilityConfigs" size="small" border>
-          <el-table-column v-if="canSeeField('usConfig.region')" label="适用区域" width="140"><template #default="{ row }">{{ regionName(row.region) }}</template></el-table-column>
-          <el-table-column v-if="canSeeField('usConfig.abilities')" label="服务能力"><template #default="{ row }">{{ row.abilities.map(abilityName).join('、') || '' }}</template></el-table-column>
-          <el-table-column v-if="canSeeField('usConfig.note') && usColHasNote" label="配置备注"><template #default="{ row }">{{ row.note || '' }}</template></el-table-column>
-        </el-table>
-        <p v-else style="color: #9ca3af">暂无配置</p>
+
+        <div v-if="view.kind === 'cn' && groupVisible('cnConfig')" style="margin-top: 16px">
+          <div class="k" style="color: #9ca3af; font-size: 12px; margin-bottom: 8px">劲港资源配置</div>
+          <el-table v-if="s.cnConfigs && s.cnConfigs.length" :data="s.cnConfigs" size="small">
+            <el-table-column v-if="canSeeField('cnConfig.region')" label="适用区域" width="140"><template #default="{ row }">{{ regionName(row.region) }}</template></el-table-column>
+            <el-table-column v-if="canSeeField('cnConfig.bizTypes')" label="业务类型"><template #default="{ row }">{{ row.bizTypes.join('、') || '' }}</template></el-table-column>
+            <el-table-column v-if="canSeeField('cnConfig.scenarios')" label="服务场景"><template #default="{ row }">{{ row.scenarios.join('、') || '' }}</template></el-table-column>
+            <el-table-column v-if="canSeeField('cnConfig.fbaNote') && cnColHas('fbaNote')" label="FBA 备注"><template #default="{ row }">{{ row.fbaNote || '' }}</template></el-table-column>
+            <el-table-column v-if="canSeeField('cnConfig.fbxNote') && cnColHas('fbxNote')" label="FBX 备注"><template #default="{ row }">{{ row.fbxNote || '' }}</template></el-table-column>
+            <el-table-column v-if="canSeeField('cnConfig.note') && cnColHas('note')" label="配置备注"><template #default="{ row }">{{ row.note || '' }}</template></el-table-column>
+          </el-table>
+          <p v-else style="color: #9ca3af">暂无配置</p>
+        </div>
+
+        <div v-if="view.kind === 'us' && groupVisible('usConfig')" style="margin-top: 16px">
+          <div class="detail-item" style="margin-bottom: 8px" v-if="canSeeField('usConfig.usPool')">
+            <div class="k">美国资源池归属</div>
+            <div class="v">
+              <el-tag v-for="p in s.usPool" :key="p" size="small" style="margin-right: 4px">{{ p }}</el-tag>
+              <span v-if="!s.usPool || !s.usPool.length" style="color: #9ca3af">—</span>
+            </div>
+          </div>
+          <div class="k" style="color: #9ca3af; font-size: 12px; margin-bottom: 8px">美盈资源配置</div>
+          <el-table v-if="s.abilityConfigs && s.abilityConfigs.length" :data="s.abilityConfigs" size="small">
+            <el-table-column v-if="canSeeField('usConfig.region')" label="适用区域" width="140"><template #default="{ row }">{{ regionName(row.region) }}</template></el-table-column>
+            <el-table-column v-if="canSeeField('usConfig.abilities')" label="服务能力"><template #default="{ row }">{{ row.abilities.map(abilityName).join('、') || '' }}</template></el-table-column>
+            <el-table-column v-if="canSeeField('usConfig.note') && usColHasNote" label="配置备注"><template #default="{ row }">{{ row.note || '' }}</template></el-table-column>
+          </el-table>
+          <p v-else style="color: #9ca3af">暂无配置</p>
+        </div>
       </div>
 
       <div class="detail-section" v-if="groupVisible('strength')">
-        <h4>资源实力</h4>
+        <div class="detail-card-head"><h4>资源实力</h4><span class="detail-sub">车队与仓库资源</span></div>
         <div class="detail-item" style="margin-bottom: 6px" v-if="canSeeField('strength.fleet')">
           <div class="k">是否自有车队</div>
           <div class="v">
@@ -595,7 +611,7 @@ watch(
       </div>
 
       <div class="detail-section" v-if="groupVisible('contact') && s.contacts && s.contacts.length">
-        <h4>对外联系信息</h4>
+        <div class="detail-card-head"><h4>对外联系信息</h4><span class="detail-sub">商务与操作对接人</span></div>
         <el-table :data="s.contacts" size="small" border>
           <el-table-column v-if="canSeeField('contact.name')" prop="name" label="供应商联系人" width="120" />
           <el-table-column v-if="canSeeField('contact.title')" label="职务" width="120"><template #default="{ row }">{{ row.title || '' }}</template></el-table-column>
@@ -615,7 +631,7 @@ watch(
       </div>
 
       <div class="detail-section" v-if="groupVisible('exception')">
-        <h4>异常 / 对接记录</h4>
+        <div class="detail-card-head"><h4>异常 / 对接记录</h4><span class="detail-sub">历史问题与处理记录</span></div>
         <el-timeline v-if="myExceptions.length">
           <el-timeline-item v-for="e in myExceptions" :key="e.id" placement="top">
             <div style="display: flex; align-items: center; gap: 8px">
@@ -787,7 +803,24 @@ watch(
   color: #6b7280;
   font-weight: 500;
 }
+:deep(.el-table td.el-table__cell) {
+  color: #374151;
+}
+:deep(.el-table .el-table__row:hover > td.el-table__cell) {
+  background: #f5f8fd;
+}
+:deep(.el-table) {
+  --el-table-border-color: #eef2f7;
+}
 :deep(.el-tag) {
   filter: saturate(0.85);
+}
+</style>
+
+<style>
+/* drawer teleport 到 body，scoped 无法命中，需全局样式 */
+.supplier-detail-drawer .el-drawer__body {
+  background: #f6f8fb;
+  padding: 20px 24px;
 }
 </style>
