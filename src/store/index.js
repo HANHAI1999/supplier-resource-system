@@ -173,6 +173,7 @@ const state = reactive({
   accounts: persisted?.accounts || defaultAccounts(),
   fieldPerms: migrateFieldPerms(persisted?.viewPermissions, persisted?.accounts || defaultAccounts()) || persisted?.fieldPerms || defaultFieldPerms(),
   suppliers: persisted?.suppliers || clone(mockSuppliers),
+  manualOrder: persisted?.manualOrder || [], // 手动拖拽排序（供应商 id 顺序）
   exceptions: persisted?.exceptions || clone(mockExceptions),
   auditLogs: persisted?.auditLogs || [],
   filters: {
@@ -202,6 +203,7 @@ watch(
         JSON.stringify({
           accounts: state.accounts,
           fieldPerms: state.fieldPerms,
+          manualOrder: state.manualOrder,
           suppliers: state.suppliers,
           exceptions: state.exceptions,
           auditLogs: state.auditLogs,
@@ -293,6 +295,20 @@ export function logout() {
   state.loggedInAccountId = ''
   state.currentAccountId = state.accounts[0]?.id || 'admin'
   state.currentViewId = 'res-map'
+}
+
+// 手动拖拽排序：保存供应商顺序（未手动排序的排在后面）
+export function setManualOrder(orderedIds) {
+  const known = new Set(state.suppliers.map((s) => s.id))
+  const ordered = orderedIds.filter((id) => known.has(id))
+  const rest = state.suppliers.map((s) => s.id).filter((id) => !ordered.includes(id))
+  state.manualOrder = [...ordered, ...rest]
+}
+// 按手动排序整理列表
+export function applyManualOrder(list) {
+  if (!state.manualOrder.length) return list
+  const idx = new Map(state.manualOrder.map((id, i) => [id, i]))
+  return [...list].sort((a, b) => (idx.get(a.id) ?? Infinity) - (idx.get(b.id) ?? Infinity))
 }
 
 export function resetFilters() {

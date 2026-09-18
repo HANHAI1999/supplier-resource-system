@@ -1,7 +1,7 @@
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { useStore, resetFilters, addSupplier, updateSupplier, addException, addAudit, logout } from './store'
+import { useStore, resetFilters, addSupplier, updateSupplier, addException, addAudit, logout, applyManualOrder, setManualOrder } from './store'
 import { views } from './data/mockAccounts'
 import { filterSuppliers } from './utils/filter'
 import { exportSuppliersXlsx, pickScope } from './utils/export'
@@ -26,8 +26,14 @@ const currentView = computed(() => {
 const viewName = (id) => views.find((v) => v.id === id)?.name || id
 
 const filtered = computed(() =>
-  currentView.value.id === 'perm' ? [] : filterSuppliers(store.suppliers, currentView.value, store.filters)
+  currentView.value.id === 'perm'
+    ? []
+    : applyManualOrder(filterSuppliers(store.suppliers, currentView.value, store.filters))
 )
+
+function onReorder(ids) {
+  setManualOrder(ids)
+}
 
 // 切换账号时保证当前视图可见
 watch(
@@ -158,7 +164,7 @@ function doExport() {
               <el-button v-if="canExportHere" @click="openExport">导出资源</el-button>
             </div>
             <FilterBar :view="currentView" :filters="store.filters" @reset="resetFilters" />
-            <SupplierTable :suppliers="filtered" @open="openDetail" />
+            <SupplierTable :suppliers="filtered" @open="openDetail" @reorder="onReorder" />
           </template>
         </template>
 

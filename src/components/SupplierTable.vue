@@ -1,12 +1,14 @@
 <script setup>
+import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import Sortable from 'sortablejs'
 import { regionForest } from '../data/regions'
 import { serviceAbilityTree } from '../data/serviceAbilities'
 import { collectLabels, deriveRegions } from '../utils/options'
 
-defineProps({
+const props = defineProps({
   suppliers: Array,
 })
-const emit = defineEmits(['open'])
+const emit = defineEmits(['open', 'reorder'])
 
 const statusTag = { 使用中: 'success', 储备: 'warning', 暂停合作: 'danger', 已淘汰: 'info' }
 const regionLabel = collectLabels(regionForest)
@@ -14,7 +16,6 @@ const abilityLabel = collectLabels(serviceAbilityTree)
 const regionName = (v) => regionLabel[v] || v
 const abilityName = (v) => abilityLabel[v] || v
 
-// 业务类型：国内 bizTypes 并集；若只有美国能力则显示服务能力并集
 function bizTypeSummary(row) {
   const biz = new Set()
   const abil = new Set()
@@ -25,21 +26,58 @@ function bizTypeSummary(row) {
   return '—'
 }
 
-// 服务场景：scenarios 并集（FBA / FBX / FBA & FBX）
 function scenarioSummary(row) {
   const scn = new Set()
   for (const c of row.cnConfigs || []) (c.scenarios || []).forEach((s) => scn.add(s))
   return scn.size ? [...scn].join(' & ') : '—'
 }
+
+// 拖拽排序（手柄拖动整行）
+const tableRef = ref(null)
+let sortable = null
+function initSortable() {
+  if (!tableRef.value) return
+  const tbody = tableRef.value.$el?.querySelector('.el-table__body-wrapper tbody')
+  if (!tbody) return
+  if (sortable) sortable.destroy()
+  sortable = Sortable.create(tbody, {
+    handle: '.drag-handle',
+    animation: 150,
+    onEnd: () => {
+      const ids = [...tbody.querySelectorAll('tr')]
+        .map((tr) => tr.dataset.rowKey)
+        .filter(Boolean)
+      if (ids.length) emit('reorder', ids)
+    },
+  })
+}
+onMounted(() => nextTick(initSortable))
+watch(
+  () => props.suppliers,
+  () => nextTick(initSortable)
+)
+onUnmounted(() => sortable?.destroy())
 </script>
 
 <template>
   <div class="table-card">
     <div class="table-head">
       <span class="count">共 {{ suppliers.length }} 家供应商</span>
+      <span style="color: #9ca3af; font-size: 12px">拖拽手柄可调整顺序</span>
     </div>
-    <el-table :data="suppliers" style="cursor: pointer" @row-click="(row) => emit('open', row)">
-      <el-table-column label="供应商名称" min-width="170">
+    <el-table
+      ref="tableRef"
+      :data="suppliers"
+      :row-key="(row) => row.id"
+      style="cursor: pointer"
+      @row-click="(row) => emit('open', row)"
+    >
+      <el-table-column width="44" align="center">
+        <template #default>
+          <el-icon class="drag-handle" style="cursor: grab"><Rank /></el-icon>
+        </template>
+      </el-table-column>
+      <el-table-column label="供应商名称" min-width="160">
         <template #default="{ row }">
           <el-link type="primary" :underline="false">{{ row.name }}</el-link>
         </template>
@@ -62,7 +100,7 @@ function scenarioSummary(row) {
           </div>
         </template>
       </el-table-column>
-      <el-table-column label="覆盖区域" min-width="180">
+      <el-table-column label="覆盖区域" min-width="170">
         <template #default="{ row }">
           <template v-if="deriveRegions(row).length">
             <el-tag v-for="r in deriveRegions(row)" :key="r" size="small" type="info" style="margin: 2px 4px 2px 0">
