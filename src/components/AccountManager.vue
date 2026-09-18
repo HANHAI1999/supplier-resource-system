@@ -117,7 +117,7 @@ function submitPerm() {
     </el-table>
 
     <!-- 成员管理弹窗 -->
-    <el-dialog v-model="memberModal.visible" :title="memberModal.mode === 'editPwd' ? '修改密码' : `成员管理 · ${activeAccount()?.name || ''}`" width="560px" append-to-body>
+    <el-dialog v-model="memberModal.visible" :title="memberModal.mode === 'editPwd' ? '修改密码' : `成员管理 · ${activeAccount()?.name || ''}`" width="680px" append-to-body>
       <el-form inline style="margin-bottom: 12px">
         <el-form-item label="用户名">
           <el-input v-model="memberModal.memberForm.username" style="width: 150px" :disabled="memberModal.mode === 'editPwd'" />
@@ -136,8 +136,8 @@ function submitPerm() {
             </el-button>
           </template>
         </el-table-column>
-        <el-table-column prop="createdAt" label="创建时间" width="160" />
-        <el-table-column label="操作" min-width="140">
+        <el-table-column prop="createdAt" label="创建时间" width="150" />
+        <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="openChangePwd(memberModal.accountId, row)">修改密码</el-button>
             <el-button link type="danger" size="small" @click="delMember(memberModal.accountId, row.id)">删除</el-button>
