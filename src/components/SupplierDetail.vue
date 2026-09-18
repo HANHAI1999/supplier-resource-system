@@ -471,9 +471,9 @@ watch(
         <el-alert v-else title="对外联系信息当前只读" type="info" :closable="false" />
       </div>
 
-      <!-- 补充信息 -->
+      <!-- 备注 -->
       <div class="detail-section" v-if="canSeeField('remark') && (canEditField('remark') || form.remark)">
-        <h4>补充信息</h4>
+        <h4>备注</h4>
         <el-input v-if="canEditField('remark')" v-model="form.remark" type="textarea" :rows="2" style="max-width: 560px" placeholder="备注" />
         <span v-else>{{ form.remark }}</span>
       </div>
@@ -596,7 +596,7 @@ watch(
       </div>
 
       <div class="detail-section" v-if="canSeeField('remark') && s.remark">
-        <h4>补充信息</h4>
+        <h4>备注</h4>
         <div class="v">{{ s.remark }}</div>
       </div>
 

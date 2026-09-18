@@ -95,7 +95,7 @@ export const permFieldGroups = [
   },
   {
     key: 'remark',
-    label: '补充信息',
+    label: '备注',
     fields: [{ key: 'remark', label: '备注' }],
   },
   {

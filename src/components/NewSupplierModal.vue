@@ -379,7 +379,7 @@ function saveWh() {
       </div>
 
       <div class="detail-section">
-        <h4>补充信息</h4>
+        <h4>备注</h4>
         <el-input v-model="form.remark" type="textarea" :rows="2" style="max-width: 560px" placeholder="备注" />
       </div>
     </template>

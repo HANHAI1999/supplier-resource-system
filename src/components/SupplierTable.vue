@@ -87,7 +87,6 @@ onUnmounted(() => sortable?.destroy())
           <el-tag :type="statusTag[row.status] || 'info'" size="small">{{ row.status }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="paymentTerms" label="供应商账期" width="110" />
       <el-table-column label="资源实力" min-width="120">
         <template #default="{ row }">
           <div style="line-height: 22px">
@@ -118,6 +117,11 @@ onUnmounted(() => sortable?.destroy())
       <el-table-column label="服务场景" min-width="130">
         <template #default="{ row }">
           <span style="font-size: 12px; color: #6b7280">{{ scenarioSummary(row) }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="备注" min-width="160">
+        <template #default="{ row }">
+          <span style="font-size: 12px; color: #6b7280">{{ row.remark || '—' }}</span>
         </template>
       </el-table-column>
     </el-table>
