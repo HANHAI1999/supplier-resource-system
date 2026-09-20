@@ -1,6 +1,6 @@
 <script setup>
 import { reactive, ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useStore, addMember, updateMemberPassword, removeMember, updateAccountPerm, permFieldGroups, getFieldPerms, setFieldPerm } from '../store'
 import { views } from '../data/mockAccounts'
 
@@ -61,8 +61,16 @@ function submitMember() {
   ElMessage.success('成员已添加')
 }
 function delMember(accountId, memberId) {
-  removeMember(accountId, memberId)
-  ElMessage.success('成员已删除')
+  ElMessageBox.confirm('删除后该账号将无法登录，确定删除？', '删除账号', {
+    confirmButtonText: '删除',
+    cancelButtonText: '取消',
+    type: 'warning',
+  })
+    .then(() => {
+      removeMember(accountId, memberId)
+      ElMessage.success('账号已删除')
+    })
+    .catch(() => {})
 }
 
 // 权限编辑弹窗
@@ -141,7 +149,7 @@ function submitPerm() {
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="openChangePwd(memberModal.accountId, row)">修改密码</el-button>
-            <el-button link type="danger" size="small" @click="delMember(memberModal.accountId, row.id)">删除</el-button>
+            <el-button link type="danger" size="small" @click="delMember(memberModal.accountId, row.id)">删除账号</el-button>
           </template>
         </el-table-column>
       </el-table>
