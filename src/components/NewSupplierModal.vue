@@ -34,7 +34,8 @@ const regionParent = buildParent(regionForest)
 
 const form = reactive({
   name: '',
-  country: '中国',
+  reconPerson: '',
+  capacity: '',
   status: '使用中',
   paymentTerms: '月结',
   contract: '是',
@@ -58,7 +59,8 @@ const form = reactive({
 function resetForm() {
   Object.assign(form, {
     name: '',
-    country: '中国',
+    reconPerson: '',
+    capacity: '',
     status: '使用中',
     paymentTerms: '月结',
     contract: '是',
@@ -88,7 +90,6 @@ function close() {
 // 第一步 → 第二步：校验主档必填（覆盖区域由配置组自动汇总，不再手填）
 function nextStep() {
   if (!form.name.trim()) return ElMessage.warning('请填写供应商名称')
-  if (!form.country.trim()) return ElMessage.warning('请填写国家')
   if (!form.status) return ElMessage.warning('请选择合作状态')
   if (!form.entity) return ElMessage.warning('请选择合作主体')
   if (!form.pools.length) return ElMessage.warning('请选择资源盘归属')
@@ -104,7 +105,8 @@ function submit() {
   const abilityConfigs = form.abilityConfigs.map((c) => ({ ...c, abilities: [...c.abilities] }))
   emit('create', {
     name: form.name,
-    country: form.country,
+    reconPerson: form.reconPerson,
+    capacity: form.capacity,
     status: form.status,
     paymentTerms: form.paymentTerms,
     contract: form.contract,
@@ -228,7 +230,8 @@ function saveWh() {
     <template v-if="step === 1">
       <el-form label-width="130px" style="max-width: 680px">
         <el-form-item label="供应商名称" required><el-input v-model="form.name" placeholder="必填" /></el-form-item>
-        <el-form-item label="国家" required><el-input v-model="form.country" /></el-form-item>
+        <el-form-item label="对账人"><el-input v-model="form.reconPerson" /></el-form-item>
+        <el-form-item label="供应商承接能力"><el-input v-model="form.capacity" /></el-form-item>
         <el-form-item label="合作状态" required>
           <el-select v-model="form.status" style="width: 100%">
             <el-option v-for="s in ['使用中', '储备', '暂停合作', '已淘汰']" :key="s" :label="s" :value="s" />

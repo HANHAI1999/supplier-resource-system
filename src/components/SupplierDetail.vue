@@ -70,7 +70,8 @@ function startEdit() {
     contract: sup.contract,
     paymentTerms: sup.paymentTerms,
     intro: sup.intro,
-    country: sup.country,
+    reconPerson: sup.reconPerson || '',
+    capacity: sup.capacity || '',
     status: sup.status,
     entity: sup.entity,
     internalContact: [...contactList(sup.internalContact)],
@@ -108,7 +109,8 @@ function save() {
     contract: form.contract,
     paymentTerms: form.paymentTerms,
     intro: form.intro,
-    country: form.country,
+    reconPerson: form.reconPerson,
+    capacity: form.capacity,
     status: form.status,
     entity: form.entity,
     internalContact: [...form.internalContact],
@@ -223,21 +225,45 @@ const contactColHas = (key) => (s.value.contacts || []).some((c) => c[key])
 
 // ---------- 异常记录 ----------
 const exVisible = ref(false)
-const exForm = reactive({ desc: '', status: '待处理', bizTypes: [], scenarios: [], regions: [], refNo: '', images: [] })
+const exForm = reactive({ desc: '', status: '待处理', bizTypes: [], scenarios: [], regions: [], refNo: '', time: '', images: [] })
 
-// 支持直接粘贴图片（不限数量）
-function onPaste(e) {
+// 文件转 base64（图片粘贴/上传统一存储，保证刷新后不丢）
+function fileToDataUrl(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = () => resolve('')
+    reader.readAsDataURL(file)
+  })
+}
+
+// 支持直接粘贴图片（不限数量，存 base64）
+async function onPaste(e) {
   if (!exVisible.value) return
   const items = e.clipboardData?.items || []
   for (const it of items) {
     if (it.type && it.type.startsWith('image/')) {
       const file = it.getAsFile()
-      if (file) exForm.images.push({ name: `粘贴图片${Date.now()}.png`, url: URL.createObjectURL(file) })
+      if (file) {
+        const dataUrl = await fileToDataUrl(file)
+        if (dataUrl) exForm.images.push(dataUrl)
+      }
     }
   }
 }
 onMounted(() => window.addEventListener('paste', onPaste))
 onUnmounted(() => window.removeEventListener('paste', onPaste))
+
+async function onUploadChange(file) {
+  const raw = file?.raw
+  if (raw) {
+    const dataUrl = await fileToDataUrl(raw)
+    if (dataUrl) exForm.images.push(dataUrl)
+  }
+}
+function removeImage(idx) {
+  exForm.images.splice(idx, 1)
+}
 
 function submitEx() {
   if (!exForm.desc.trim()) return
@@ -249,10 +275,11 @@ function submitEx() {
     scenarios: [...exForm.scenarios],
     regions: [...exForm.regions],
     refNo: exForm.refNo,
-    images: exForm.images.map((f) => f.name || f),
+    time: exForm.time,
+    images: [...exForm.images],
   })
   exVisible.value = false
-  Object.assign(exForm, { desc: '', status: '待处理', bizTypes: [], scenarios: [], regions: [], refNo: '', images: [] })
+  Object.assign(exForm, { desc: '', status: '待处理', bizTypes: [], scenarios: [], regions: [], refNo: '', time: '', images: [] })
 }
 
 // 兼容旧数据：业务类型(整柜/散货)与服务场景(FBA/FBX)分开显示
@@ -315,8 +342,11 @@ watch(
           </el-form-item>
           <el-form-item v-else-if="canSeeField('basic.paymentTerms')" label="供应商账期"><span>{{ form.paymentTerms }}</span></el-form-item>
 
-          <el-form-item v-if="canEditField('basic.country')" label="国家" required><el-input v-model="form.country" /></el-form-item>
-          <el-form-item v-else-if="canSeeField('basic.country')" label="国家"><span>{{ form.country }}</span></el-form-item>
+          <el-form-item v-if="canEditField('basic.reconPerson')" label="对账人"><el-input v-model="form.reconPerson" /></el-form-item>
+          <el-form-item v-else-if="canSeeField('basic.reconPerson')" label="对账人"><span>{{ form.reconPerson || '—' }}</span></el-form-item>
+
+          <el-form-item v-if="canEditField('basic.capacity')" label="供应商承接能力"><el-input v-model="form.capacity" /></el-form-item>
+          <el-form-item v-else-if="canSeeField('basic.capacity')" label="供应商承接能力"><span>{{ form.capacity || '—' }}</span></el-form-item>
 
           <el-form-item v-if="canEditField('basic.status')" label="合作状态">
             <el-select v-model="form.status" style="width: 100%">
@@ -511,7 +541,8 @@ watch(
           <div v-if="canSeeField('basic.status')" class="detail-item"><div class="k">合作状态</div><div class="v">{{ s.status }}</div></div>
           <div v-if="canSeeField('basic.contract')" class="detail-item"><div class="k">是否签署合同</div><div class="v">{{ s.contract }}</div></div>
           <div v-if="canSeeField('basic.paymentTerms')" class="detail-item"><div class="k">供应商账期</div><div class="v">{{ s.paymentTerms }}</div></div>
-          <div v-if="canSeeField('basic.country')" class="detail-item"><div class="k">国家</div><div class="v">{{ s.country }}</div></div>
+          <div v-if="canSeeField('basic.reconPerson')" class="detail-item"><div class="k">对账人</div><div class="v">{{ s.reconPerson || '—' }}</div></div>
+          <div v-if="canSeeField('basic.capacity')" class="detail-item"><div class="k">供应商承接能力</div><div class="v">{{ s.capacity || '—' }}</div></div>
           <div v-if="canSeeField('basic.intro') && s.intro" class="detail-item detail-item--full">
             <div class="k">公司介绍</div>
             <div class="v detail-text">{{ s.intro }}</div>
@@ -650,8 +681,21 @@ watch(
             <div v-if="canSeeField('exception.refNo') && e.refNo" style="color: #9ca3af; font-size: 12px; margin-top: 4px">
               关联编号：{{ e.refNo }}
             </div>
-            <div v-if="canSeeField('exception.images') && e.images && e.images.length" style="color: #9ca3af; font-size: 12px; margin-top: 4px">
-              图片：{{ e.images.join('、') }}
+            <div v-if="canSeeField('exception.time') && e.time" style="color: #9ca3af; font-size: 12px; margin-top: 4px">
+              异常时间：{{ e.time }}
+            </div>
+            <div v-if="canSeeField('exception.images') && e.images && e.images.length" style="margin-top: 6px">
+              <div style="display: flex; flex-wrap: wrap; gap: 8px">
+                <el-image
+                  v-for="(img, i) in e.images"
+                  :key="i"
+                  :src="img.startsWith('data:') ? img : ''"
+                  :preview-src-list="e.images.filter((x) => x.startsWith('data:'))"
+                  fit="cover"
+                  style="width: 72px; height: 72px; border-radius: 6px; border: 1px solid #e5e7eb"
+                />
+                <span v-for="(img, i) in e.images.filter((x) => !x.startsWith('data:'))" :key="'t' + i" style="color: #9ca3af; font-size: 12px; align-self: center">{{ img }}</span>
+              </div>
             </div>
             <div v-if="canSeeField('exception.process') && e.process" style="margin-top: 4px; color: #6b7280">处理过程：{{ e.process }}</div>
             <div v-if="canSeeField('exception.result') && e.result" style="margin-top: 4px; color: #6b7280">结果说明：{{ e.result }}</div>
@@ -733,6 +777,15 @@ watch(
         <el-form-item v-if="canEditField('exception.refNo')" label="关联编号">
           <el-input v-model="exForm.refNo" placeholder="关联单号 / 柜号 / 业务编号" />
         </el-form-item>
+        <el-form-item v-if="canEditField('exception.time')" label="异常时间">
+          <el-date-picker
+            v-model="exForm.time"
+            type="datetime"
+            value-format="YYYY-MM-DD HH:mm"
+            placeholder="选择异常发生时间"
+            style="width: 100%"
+          />
+        </el-form-item>
         <el-form-item v-if="canEditField('exception.bizTypes')" label="涉及业务">
           <el-checkbox-group v-model="exForm.bizTypes">
             <el-checkbox label="整柜">整柜</el-checkbox>
@@ -757,15 +810,34 @@ watch(
           <el-input v-model="exForm.desc" type="textarea" :rows="3" placeholder="必填" />
         </el-form-item>
         <el-form-item v-if="canEditField('exception.images')" label="相关图片">
-          <el-upload
-            v-model:file-list="exForm.images"
-            action="#"
-            :auto-upload="false"
-            list-type="picture-card"
-            multiple
-          >
-            <el-button size="small">添加图片</el-button>
-          </el-upload>
+          <div style="width: 100%">
+            <el-upload
+              action="#"
+              :auto-upload="false"
+              :show-file-list="false"
+              multiple
+              accept="image/*"
+              :on-change="onUploadChange"
+            >
+              <el-button size="small">添加图片</el-button>
+            </el-upload>
+            <div v-if="exForm.images.length" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px">
+              <div v-for="(img, i) in exForm.images" :key="i" style="position: relative; width: 80px; height: 80px">
+                <el-image
+                  :src="img"
+                  :preview-src-list="exForm.images"
+                  :initial-index="i"
+                  fit="cover"
+                  style="width: 80px; height: 80px; border-radius: 6px; border: 1px solid #e5e7eb"
+                />
+                <el-icon
+                  @click="removeImage(i)"
+                  style="position: absolute; top: -6px; right: -6px; background: #fff; border-radius: 50%; cursor: pointer; font-size: 16px"
+                ><Close /></el-icon>
+              </div>
+            </div>
+            <div style="color: #9ca3af; font-size: 12px; margin-top: 6px">点「添加图片」选择，或直接在弹窗里 Ctrl+V 粘贴截图，数量不限</div>
+          </div>
         </el-form-item>
       </el-form>
       <template #footer>
