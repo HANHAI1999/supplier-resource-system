@@ -120,7 +120,10 @@ function submitPerm() {
       <el-table-column label="操作" width="200">
         <template #default="{ row }">
           <el-button link type="primary" size="small" @click="openMembers(row.id)">管理成员</el-button>
-          <el-button link type="primary" size="small" @click="openPerm(row.id)">编辑权限</el-button>
+          <el-button v-if="row.id !== 'admin'" link type="primary" size="small" @click="openPerm(row.id)">编辑权限</el-button>
+          <el-tooltip v-else content="主账号权限不可修改" placement="top">
+            <span><el-button link type="info" size="small" disabled>编辑权限</el-button></span>
+          </el-tooltip>
         </template>
       </el-table-column>
     </el-table>
@@ -149,7 +152,10 @@ function submitPerm() {
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="openChangePwd(memberModal.accountId, row)">修改密码</el-button>
-            <el-button link type="danger" size="small" @click="delMember(memberModal.accountId, row.id)">删除账号</el-button>
+            <el-button v-if="memberModal.accountId !== 'admin'" link type="danger" size="small" @click="delMember(memberModal.accountId, row.id)">删除账号</el-button>
+            <el-tooltip v-else content="主账号不可删除" placement="top">
+              <span><el-button link type="info" size="small" disabled>删除账号</el-button></span>
+            </el-tooltip>
           </template>
         </el-table-column>
       </el-table>

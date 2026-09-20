@@ -255,12 +255,14 @@ export function updateMemberPassword(accountId, memberId, password) {
 }
 
 export function removeMember(accountId, memberId) {
+  if (accountId === 'admin') return // 主账号成员不可删除
   const acc = state.accounts.find((a) => a.id === accountId)
   if (!acc?.members) return
   acc.members = acc.members.filter((x) => x.id !== memberId)
 }
 
 export function updateAccountPerm(accountId, patch) {
+  if (accountId === 'admin') return // 主账号权限不可修改
   const acc = state.accounts.find((a) => a.id === accountId)
   if (acc) Object.assign(acc, patch)
 }
@@ -285,6 +287,7 @@ export function getFieldPerms(accountId) {
   return state.fieldPerms[accountId]
 }
 export function setFieldPerm(accountId, poolKey, kind, fieldKey, val) {
+  if (accountId === 'admin') return // 主账号字段权限不可修改
   const perms = getFieldPerms(accountId)
   const cur = perms[poolKey][kind]
   perms[poolKey][kind] = val ? [...cur, fieldKey] : cur.filter((k) => k !== fieldKey)
