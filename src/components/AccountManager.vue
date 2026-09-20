@@ -55,7 +55,8 @@ function submitMember() {
     return
   }
   if (!f.username.trim() || !f.password.trim()) return ElMessage.warning('请填写用户名和密码')
-  addMember(memberModal.accountId, f.username.trim(), f.password.trim())
+  const r = addMember(memberModal.accountId, f.username.trim(), f.password.trim())
+  if (!r.ok) return ElMessage.warning(r.msg)
   memberModal.memberForm = { username: '', password: '' }
   ElMessage.success('成员已添加')
 }

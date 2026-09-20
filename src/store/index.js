@@ -228,20 +228,30 @@ export function useStore() {
 // ---------- 账号管理 ----------
 export function addMember(accountId, username, password) {
   const acc = state.accounts.find((a) => a.id === accountId)
-  if (!acc) return
+  if (!acc) return { ok: false, msg: '账号不存在' }
   if (!acc.members) acc.members = []
+  if (acc.members.some((x) => x.username === username)) {
+    return { ok: false, msg: `用户名 ${username} 已存在，请直接点「修改密码」` }
+  }
   acc.members.push({
     id: 'm-' + Date.now(),
     username,
     password,
     createdAt: new Date().toLocaleString('zh-CN'),
   })
+  return { ok: true }
 }
 
+// 修改密码：按用户名更新该账号下所有同名成员，避免历史数据里重复同名成员导致登录对不上
 export function updateMemberPassword(accountId, memberId, password) {
   const acc = state.accounts.find((a) => a.id === accountId)
-  const m = acc?.members?.find((x) => x.id === memberId)
-  if (m) m.password = password
+  if (!acc?.members?.length) return
+  const target = acc.members.find((x) => x.id === memberId)
+  const name = target?.username
+  if (!name) return
+  for (const m of acc.members) {
+    if (m.username === name) m.password = password
+  }
 }
 
 export function removeMember(accountId, memberId) {
@@ -283,8 +293,9 @@ export function setFieldPerm(accountId, poolKey, kind, fieldKey, val) {
 // ---------- 登录 ----------
 export function login(username, password) {
   const u = (username || '').trim()
+  const p = (password || '').trim()
   for (const acc of state.accounts) {
-    const m = (acc.members || []).find((x) => x.username === u && x.password === password)
+    const m = (acc.members || []).find((x) => x.username === u && String(x.password).trim() === p)
     if (m) {
       state.loggedInAccountId = acc.id
       state.currentAccountId = acc.id
