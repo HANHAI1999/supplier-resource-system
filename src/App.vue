@@ -164,7 +164,7 @@ function doExport() {
               <el-button v-if="canExportHere" @click="openExport">导出资源</el-button>
             </div>
             <FilterBar :view="currentView" :filters="store.filters" @reset="resetFilters" />
-            <SupplierTable :suppliers="filtered" @open="openDetail" @reorder="onReorder" />
+            <SupplierTable :suppliers="filtered" :can-sort="!!currentAccount?.canManage" @open="openDetail" @reorder="onReorder" />
           </template>
         </template>
 

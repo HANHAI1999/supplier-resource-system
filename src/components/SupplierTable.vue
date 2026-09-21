@@ -7,6 +7,7 @@ import { collectLabels, deriveRegions } from '../utils/options'
 
 const props = defineProps({
   suppliers: Array,
+  canSort: { type: Boolean, default: false }, // 仅管理员可拖拽排序
 })
 const emit = defineEmits(['open', 'reorder'])
 
@@ -36,7 +37,7 @@ function scenarioSummary(row) {
 const tableRef = ref(null)
 let sortable = null
 function initSortable() {
-  if (!tableRef.value) return
+  if (!props.canSort || !tableRef.value) return
   const tbody = tableRef.value.$el?.querySelector('.el-table__body-wrapper tbody')
   if (!tbody) return
   if (sortable) sortable.destroy()
@@ -53,7 +54,7 @@ function initSortable() {
 }
 onMounted(() => nextTick(initSortable))
 watch(
-  () => props.suppliers,
+  () => [props.suppliers, props.canSort],
   () => nextTick(initSortable)
 )
 onUnmounted(() => sortable?.destroy())
@@ -63,7 +64,7 @@ onUnmounted(() => sortable?.destroy())
   <div class="table-card">
     <div class="table-head">
       <span class="count">共 {{ suppliers.length }} 家供应商</span>
-      <span style="color: #9ca3af; font-size: 12px">拖拽手柄可调整顺序</span>
+      <span v-if="canSort" style="color: #9ca3af; font-size: 12px">拖拽手柄可调整顺序</span>
     </div>
     <el-table
       ref="tableRef"
@@ -72,7 +73,7 @@ onUnmounted(() => sortable?.destroy())
       style="cursor: pointer"
       @row-click="(row) => emit('open', row)"
     >
-      <el-table-column width="44" align="center">
+      <el-table-column v-if="canSort" width="44" align="center">
         <template #default>
           <el-icon class="drag-handle" style="cursor: grab"><Rank /></el-icon>
         </template>

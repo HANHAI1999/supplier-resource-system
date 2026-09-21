@@ -1,7 +1,7 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { useStore, addMember, updateMemberPassword, removeMember, updateAccountPerm, permFieldGroups, getFieldPerms, setFieldPerm } from '../store'
+import { useStore, addAccount, removeAccount, addMember, updateMemberPassword, removeMember, updateAccountPerm, permFieldGroups, getFieldPerms, setFieldPerm } from '../store'
 import { views } from '../data/mockAccounts'
 
 const store = useStore()
@@ -25,6 +25,37 @@ function spanMethod({ row, columnIndex }) {
 function hasField(poolKey, fieldKey, kind) {
   const perms = getFieldPerms(permModal.accountId)
   return (perms[poolKey][kind] || []).includes(fieldKey)
+}
+
+// 新建账号弹窗
+const newAccModal = reactive({ visible: false, form: { name: '', views: ['res-map'], memberUsername: '', memberPassword: '' } })
+function openNewAccount() {
+  newAccModal.form = { name: '', views: ['res-map'], memberUsername: '', memberPassword: '' }
+  newAccModal.visible = true
+}
+function submitNewAccount() {
+  const f = newAccModal.form
+  if (!f.name.trim()) return ElMessage.warning('请填写账号名称')
+  if (!f.views.length) return ElMessage.warning('请至少勾选一个可见视图')
+  if (f.memberUsername && !f.memberPassword) return ElMessage.warning('填了成员用户名就必须填密码')
+  const r = addAccount(f.name.trim(), f.views, f.memberUsername ? { username: f.memberUsername.trim(), password: f.memberPassword } : null)
+  if (r.ok) {
+    newAccModal.visible = false
+    ElMessage.success(`账号「${f.name.trim()}」已创建`)
+  }
+}
+function delAccount(accountId, name) {
+  ElMessageBox.confirm(`删除账号「${name}」后其成员将无法登录，确定删除？`, '删除账号', {
+    confirmButtonText: '删除',
+    cancelButtonText: '取消',
+    type: 'warning',
+  })
+    .then(() => {
+      const r = removeAccount(accountId)
+      if (r.ok) ElMessage.success('账号已删除')
+      else ElMessage.warning(r.msg)
+    })
+    .catch(() => {})
 }
 
 // 成员管理弹窗（新增成员 / 修改密码共用）
@@ -101,6 +132,10 @@ function submitPerm() {
 
 <template>
   <div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px">
+      <span style="color: #6b7280; font-size: 13px">账号列表：每个账号独立配置可见视图与成员</span>
+      <el-button type="primary" size="small" @click="openNewAccount">新建账号</el-button>
+    </div>
     <el-table :data="store.accounts" size="small" border>
       <el-table-column prop="name" label="账号" width="140" />
       <el-table-column label="成员" width="90">
@@ -117,16 +152,42 @@ function submitPerm() {
       <el-table-column label="导出" width="70">
         <template #default="{ row }">{{ row.canExport ? '是' : '否' }}</template>
       </el-table-column>
-      <el-table-column label="操作" width="200">
+      <el-table-column label="操作" width="280">
         <template #default="{ row }">
           <el-button link type="primary" size="small" @click="openMembers(row.id)">管理成员</el-button>
           <el-button v-if="row.id !== 'admin'" link type="primary" size="small" @click="openPerm(row.id)">编辑权限</el-button>
           <el-tooltip v-else content="主账号权限不可修改" placement="top">
             <span><el-button link type="info" size="small" disabled>编辑权限</el-button></span>
           </el-tooltip>
+          <el-button v-if="row.id !== 'admin'" link type="danger" size="small" @click="delAccount(row.id, row.name)">删除账号</el-button>
+          <el-tooltip v-else content="主账号不可删除" placement="top">
+            <span><el-button link type="info" size="small" disabled>删除账号</el-button></span>
+          </el-tooltip>
         </template>
       </el-table-column>
     </el-table>
+
+    <!-- 新建账号弹窗 -->
+    <el-dialog v-model="newAccModal.visible" title="新建账号" width="520px" append-to-body>
+      <el-form label-width="90px">
+        <el-form-item label="账号名称" required><el-input v-model="newAccModal.form.name" placeholder="如：美西运营" /></el-form-item>
+        <el-form-item label="可见视图" required>
+          <el-checkbox-group v-model="newAccModal.form.views">
+            <el-checkbox v-for="v in views" :key="v.id" :label="v.id">{{ v.name }}</el-checkbox>
+          </el-checkbox-group>
+        </el-form-item>
+        <el-form-item label="初始成员">
+          <div style="display: flex; gap: 8px; width: 100%">
+            <el-input v-model="newAccModal.form.memberUsername" placeholder="用户名（可空，稍后添加）" style="flex: 1" />
+            <el-input v-model="newAccModal.form.memberPassword" placeholder="密码" style="flex: 1" />
+          </div>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="newAccModal.visible = false">取消</el-button>
+        <el-button type="primary" @click="submitNewAccount">创建账号</el-button>
+      </template>
+    </el-dialog>
 
     <!-- 成员管理弹窗 -->
     <el-dialog v-model="memberModal.visible" :title="memberModal.mode === 'editPwd' ? '修改密码' : `成员管理 · ${activeAccount()?.name || ''}`" width="680px" append-to-body>

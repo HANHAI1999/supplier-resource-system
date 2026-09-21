@@ -228,6 +228,31 @@ export function useStore() {
 }
 
 // ---------- 账号管理 ----------
+export function addAccount(name, views, member) {
+  const acc = {
+    id: 'acc-' + Date.now(),
+    name: name || '新账号',
+    title: name || '新账号',
+    views: [...views],
+    canCreate: [],
+    canExport: false,
+    canManage: false,
+    members: member && member.username ? [{ id: 'm-' + Date.now(), username: member.username, password: member.password, createdAt: new Date().toLocaleString('zh-CN') }] : [],
+  }
+  state.accounts.push(acc)
+  getFieldPerms(acc.id) // 初始化字段权限
+  return { ok: true, account: acc }
+}
+
+export function removeAccount(accountId) {
+  if (accountId === 'admin') return { ok: false, msg: '主账号不可删除' }
+  const idx = state.accounts.findIndex((a) => a.id === accountId)
+  if (idx === -1) return { ok: false, msg: '账号不存在' }
+  state.accounts.splice(idx, 1)
+  delete state.fieldPerms[accountId]
+  return { ok: true }
+}
+
 export function addMember(accountId, username, password) {
   const acc = state.accounts.find((a) => a.id === accountId)
   if (!acc) return { ok: false, msg: '账号不存在' }
