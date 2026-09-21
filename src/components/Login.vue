@@ -1,15 +1,12 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { login, ownerLogin } from '../store'
+import { login } from '../store'
 
 const emit = defineEmits(['logged-in'])
 
 const form = reactive({ username: '', password: '' })
 const loading = ref(false)
-const ownerVisible = ref(false)
-const ownerForm = reactive({ passphrase: '' })
-const ownerLoading = ref(false)
 
 function submit() {
   if (!form.username.trim() || !form.password) {
@@ -24,23 +21,6 @@ function submit() {
     emit('logged-in', res.account)
   } else {
     ElMessage.error('用户名或密码错误')
-  }
-}
-
-async function submitOwner() {
-  if (!ownerForm.passphrase.trim()) {
-    ElMessage.warning('请输入所有者口令')
-    return
-  }
-  ownerLoading.value = true
-  const res = await ownerLogin(ownerForm.passphrase)
-  ownerLoading.value = false
-  if (res.ok) {
-    ownerVisible.value = false
-    ElMessage.success('已进入最高权限，admin 密码已重置为 admin123')
-    emit('logged-in', res.account)
-  } else {
-    ElMessage.error('所有者口令错误')
   }
 }
 </script>
@@ -61,21 +41,7 @@ async function submitOwner() {
           登录
         </el-button>
       </el-form>
-      <div style="text-align: center; margin-top: 14px">
-        <el-button link size="small" type="info" @click="ownerVisible = true">所有者入口（找回最高权限）</el-button>
-      </div>
     </div>
-
-    <el-dialog v-model="ownerVisible" title="所有者入口" width="360px" append-to-body>
-      <div style="color: #6b7280; font-size: 13px; margin-bottom: 12px">
-        输入所有者口令，验证通过后直接进入最高权限，并把 admin 密码重置为 admin123。
-      </div>
-      <el-input v-model="ownerForm.passphrase" type="password" placeholder="所有者口令" size="large" show-password @keyup.enter="submitOwner" />
-      <template #footer>
-        <el-button @click="ownerVisible = false">取消</el-button>
-        <el-button type="primary" :loading="ownerLoading" @click="submitOwner">进入</el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
