@@ -35,7 +35,6 @@ const regionParent = buildParent(regionForest)
 const form = reactive({
   name: '',
   reconPerson: '',
-  capacity: '',
   status: '使用中',
   paymentTerms: '月结',
   contract: '是',
@@ -60,7 +59,6 @@ function resetForm() {
   Object.assign(form, {
     name: '',
     reconPerson: '',
-    capacity: '',
     status: '使用中',
     paymentTerms: '月结',
     contract: '是',
@@ -106,7 +104,6 @@ function submit() {
   emit('create', {
     name: form.name,
     reconPerson: form.reconPerson,
-    capacity: form.capacity,
     status: form.status,
     paymentTerms: form.paymentTerms,
     contract: form.contract,
@@ -231,7 +228,6 @@ function saveWh() {
       <el-form label-width="130px" style="max-width: 680px">
         <el-form-item label="供应商名称" required><el-input v-model="form.name" placeholder="必填" /></el-form-item>
         <el-form-item label="对账人"><el-input v-model="form.reconPerson" /></el-form-item>
-        <el-form-item label="供应商承接能力"><el-input v-model="form.capacity" /></el-form-item>
         <el-form-item label="合作状态" required>
           <el-select v-model="form.status" style="width: 100%">
             <el-option v-for="s in ['使用中', '储备', '暂停合作', '已淘汰']" :key="s" :label="s" :value="s" />

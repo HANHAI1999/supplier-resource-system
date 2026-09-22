@@ -1,7 +1,8 @@
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { useStore, resetFilters, addSupplier, updateSupplier, addException, addAudit, logout, applyManualOrder, setManualOrder } from './store'
+import { useStore, setCloudSuppliers, resetFilters, addSupplier, updateSupplier, addException, addAudit, logout, applyManualOrder, setManualOrder } from './store'
+import { fetchCloudSuppliers, isCloudApiConfigured } from './services/suppliersApi'
 import { views } from './data/mockAccounts'
 import { filterSuppliers } from './utils/filter'
 import { exportSuppliersXlsx, pickScope } from './utils/export'
@@ -15,6 +16,7 @@ import AccountManager from './components/AccountManager.vue'
 import Login from './components/Login.vue'
 
 const store = useStore()
+const suppliers = computed(() => store.cloudSuppliers ?? store.suppliers)
 
 const currentAccount = computed(
   () => store.accounts.find((a) => a.id === store.currentAccountId) || store.accounts[0]
@@ -28,7 +30,20 @@ const viewName = (id) => views.find((v) => v.id === id)?.name || id
 const filtered = computed(() =>
   currentView.value.id === 'perm'
     ? []
-    : applyManualOrder(filterSuppliers(store.suppliers, currentView.value, store.filters))
+    : applyManualOrder(filterSuppliers(suppliers.value, currentView.value, store.filters))
+)
+
+watch(
+  () => store.loggedInAccountId,
+  async (accountId) => {
+    if (!accountId || !isCloudApiConfigured()) return
+    try {
+      setCloudSuppliers(await fetchCloudSuppliers())
+    } catch (error) {
+      ElMessage.warning(error.message)
+    }
+  },
+  { immediate: true }
 )
 
 function onReorder(ids) {
@@ -66,7 +81,7 @@ const canExportHere = computed(() => currentAccount.value.canExport && currentVi
 // 供应商详情
 const detailVisible = ref(false)
 const detailSupplierId = ref('')
-const detailSupplier = computed(() => store.suppliers.find((s) => s.id === detailSupplierId.value) || null)
+const detailSupplier = computed(() => suppliers.value.find((s) => s.id === detailSupplierId.value) || null)
 function openDetail(row) {
   detailSupplierId.value = row.id
   detailVisible.value = true
@@ -111,7 +126,7 @@ function openExport() {
   exportVisible.value = true
 }
 function doExport() {
-  const list = pickScope(store.suppliers, exportForm.scope, currentView.value, filtered.value)
+  const list = pickScope(suppliers.value, exportForm.scope, currentView.value, filtered.value)
   if (!list.length) {
     ElMessage.warning('该范围内没有可导出的供应商')
     return
@@ -156,7 +171,7 @@ function doExport() {
             <div class="toolbar">
               <el-button v-if="canExportHere" @click="openExport">导出资源</el-button>
             </div>
-            <ResourceMap :suppliers="store.suppliers" @open="openDetail" />
+            <ResourceMap :suppliers="suppliers" @open="openDetail" />
           </template>
           <template v-else>
             <div class="toolbar">

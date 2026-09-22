@@ -19,7 +19,6 @@ export function exportSuppliersXlsx(suppliers, exceptions, includeExceptions, sc
     供应商唯一ID: s.id,
     供应商名称: s.name,
     对账人: s.reconPerson || '',
-    供应商承接能力: s.capacity || '',
     是否签署合同: s.contract,
     供应商账期: s.paymentTerms,
     公司介绍: s.intro || '',

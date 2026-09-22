@@ -345,8 +345,6 @@ watch(
           <el-form-item v-if="canEditField('basic.reconPerson')" label="对账人"><el-input v-model="form.reconPerson" /></el-form-item>
           <el-form-item v-else-if="canSeeField('basic.reconPerson')" label="对账人"><span>{{ form.reconPerson || '—' }}</span></el-form-item>
 
-          <el-form-item v-if="canEditField('basic.capacity')" label="供应商承接能力"><el-input v-model="form.capacity" /></el-form-item>
-          <el-form-item v-else-if="canSeeField('basic.capacity')" label="供应商承接能力"><span>{{ form.capacity || '—' }}</span></el-form-item>
 
           <el-form-item v-if="canEditField('basic.status')" label="合作状态">
             <el-select v-model="form.status" style="width: 100%">
@@ -542,7 +540,6 @@ watch(
           <div v-if="canSeeField('basic.contract')" class="detail-item"><div class="k">是否签署合同</div><div class="v">{{ s.contract }}</div></div>
           <div v-if="canSeeField('basic.paymentTerms')" class="detail-item"><div class="k">供应商账期</div><div class="v">{{ s.paymentTerms }}</div></div>
           <div v-if="canSeeField('basic.reconPerson')" class="detail-item"><div class="k">对账人</div><div class="v">{{ s.reconPerson || '—' }}</div></div>
-          <div v-if="canSeeField('basic.capacity')" class="detail-item"><div class="k">供应商承接能力</div><div class="v">{{ s.capacity || '—' }}</div></div>
           <div v-if="canSeeField('basic.intro') && s.intro" class="detail-item detail-item--full">
             <div class="k">公司介绍</div>
             <div class="v detail-text">{{ s.intro }}</div>

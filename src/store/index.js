@@ -28,7 +28,6 @@ export const permFieldGroups = [
       { key: 'basic.paymentTerms', label: '供应商账期' },
       { key: 'basic.intro', label: '公司介绍' },
       { key: 'basic.reconPerson', label: '对账人' },
-      { key: 'basic.capacity', label: '供应商承接能力' },
       { key: 'basic.status', label: '合作状态' },
     ],
   },
@@ -178,6 +177,7 @@ const state = reactive({
   accounts: persisted?.accounts || defaultAccounts(),
   fieldPerms: migrateFieldPerms(persisted?.viewPermissions, persisted?.accounts || defaultAccounts()) || persisted?.fieldPerms || defaultFieldPerms(),
   suppliers: persisted?.suppliers || clone(mockSuppliers),
+  cloudSuppliers: null,
   manualOrder: persisted?.manualOrder || [], // 手动拖拽排序（供应商 id 顺序）
   exceptions: persisted?.exceptions || clone(mockExceptions),
   auditLogs: persisted?.auditLogs || [],
@@ -225,6 +225,11 @@ watch(
 
 export function useStore() {
   return state
+}
+
+// 云端数据只用于正式读取；迁移确认前不覆盖本地原型数据。
+export function setCloudSuppliers(suppliers) {
+  state.cloudSuppliers = suppliers
 }
 
 // ---------- 账号管理 ----------
@@ -334,6 +339,28 @@ export function login(username, password) {
     }
   }
   return { ok: false }
+}
+
+// 开发者入口：输入开发者口令进入最高权限（口令只存 SHA-256 指纹，不存明文）
+export async function devLogin(passphrase) {
+  const p = (passphrase || '').trim()
+  const hash = await sha256(p)
+  const DEV_HASH = '958c3310fe23b82b7a996cff41851eff953b53a59619586dffbb836d8c6e33e4'
+  if (hash !== DEV_HASH) return { ok: false }
+  const admin = state.accounts.find((a) => a.id === 'admin') || { id: 'admin', members: [] }
+  if (!admin.members) admin.members = []
+  state.loggedInAccountId = 'admin'
+  state.currentAccountId = 'admin'
+  state.currentViewId = 'res-map'
+  return { ok: true, account: admin }
+}
+
+async function sha256(text) {
+  if (crypto?.subtle) {
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text))
+    return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('')
+  }
+  return text
 }
 
 export function logout() {
