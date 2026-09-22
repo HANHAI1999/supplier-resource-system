@@ -299,6 +299,17 @@ export function updateAccountPerm(accountId, patch) {
   if (acc) Object.assign(acc, patch)
 }
 
+// 账号改名（所有账号均可，包括主账号；只改名称，不动权限）
+export function renameAccount(accountId, name) {
+  const acc = state.accounts.find((a) => a.id === accountId)
+  if (!acc) return { ok: false, msg: '账号不存在' }
+  const n = (name || '').trim()
+  if (!n) return { ok: false, msg: '名称不能为空' }
+  acc.name = n
+  acc.title = n
+  return { ok: true }
+}
+
 // 当前视图对应的资源盘权限（cn 三个视图共用；美西/美东各一个）
 // 当前账号 × 视图对应的字段权限（劲港=cn，美盈=us，美西/美东共用美盈）
 export function permOf(account, view) {

@@ -1,7 +1,7 @@
 <script setup>
 import { reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { useStore, addAccount, removeAccount, addMember, updateMemberPassword, removeMember, updateAccountPerm, permFieldGroups, getFieldPerms, setFieldPerm } from '../store'
+import { useStore, addAccount, removeAccount, renameAccount, addMember, updateMemberPassword, removeMember, updateAccountPerm, permFieldGroups, getFieldPerms, setFieldPerm } from '../store'
 import { views } from '../data/mockAccounts'
 
 const store = useStore()
@@ -56,6 +56,20 @@ function delAccount(accountId, name) {
       else ElMessage.warning(r.msg)
     })
     .catch(() => {})
+}
+
+// 账号改名弹窗
+const renameModal = reactive({ visible: false, accountId: '', name: '' })
+function openRename(accountId, name) {
+  renameModal.accountId = accountId
+  renameModal.name = name
+  renameModal.visible = true
+}
+function submitRename() {
+  const r = renameAccount(renameModal.accountId, renameModal.name)
+  if (!r.ok) return ElMessage.warning(r.msg)
+  renameModal.visible = false
+  ElMessage.success('账号名称已更新')
 }
 
 // 成员管理弹窗（新增成员 / 修改密码共用）
@@ -155,6 +169,7 @@ function submitPerm() {
       <el-table-column label="操作" width="280">
         <template #default="{ row }">
           <el-button link type="primary" size="small" @click="openMembers(row.id)">管理成员</el-button>
+          <el-button link type="primary" size="small" @click="openRename(row.id, row.name)">改名</el-button>
           <el-button v-if="row.id !== 'admin'" link type="primary" size="small" @click="openPerm(row.id)">编辑权限</el-button>
           <el-tooltip v-else content="主账号权限不可修改" placement="top">
             <span><el-button link type="info" size="small" disabled>编辑权限</el-button></span>
@@ -186,6 +201,17 @@ function submitPerm() {
       <template #footer>
         <el-button @click="newAccModal.visible = false">取消</el-button>
         <el-button type="primary" @click="submitNewAccount">创建账号</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 账号改名弹窗 -->
+    <el-dialog v-model="renameModal.visible" title="账号改名" width="420px" append-to-body>
+      <el-form label-width="80px">
+        <el-form-item label="账号名称" required><el-input v-model="renameModal.name" placeholder="输入新的账号名称" /></el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="renameModal.visible = false">取消</el-button>
+        <el-button type="primary" @click="submitRename">保存</el-button>
       </template>
     </el-dialog>
 
