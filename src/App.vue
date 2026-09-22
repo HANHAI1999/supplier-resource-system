@@ -2,7 +2,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useStore, setCloudSuppliers, resetFilters, addSupplier, updateSupplier, addException, addAudit, logout, applyManualOrder, setManualOrder } from './store'
-import { fetchCloudSuppliers, isCloudApiConfigured } from './services/suppliersApi'
+import { fetchCloudSuppliers, fetchCloudExceptions } from './services/suppliersApi'
 import { views } from './data/mockAccounts'
 import { filterSuppliers } from './utils/filter'
 import { exportSuppliersXlsx, pickScope } from './utils/export'
@@ -36,11 +36,14 @@ const filtered = computed(() =>
 watch(
   () => store.loggedInAccountId,
   async (accountId) => {
-    if (!accountId || !isCloudApiConfigured()) return
+    if (!accountId) return
     try {
-      setCloudSuppliers(await fetchCloudSuppliers())
-    } catch (error) {
-      ElMessage.warning(error.message)
+      const cloud = await fetchCloudSuppliers()
+      if (Array.isArray(cloud)) setCloudSuppliers(cloud)
+      const cloudEx = await fetchCloudExceptions()
+      if (Array.isArray(cloudEx)) store.exceptions = cloudEx
+    } catch {
+      /* 云端不可用时保留本地数据 */
     }
   },
   { immediate: true }

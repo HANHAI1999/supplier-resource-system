@@ -1,15 +1,11 @@
 // Server-only configuration. Values here must never be imported by frontend code.
 export const feishuConfig = {
-  appToken: process.env.FEISHU_BITABLE_APP_TOKEN,
+  appToken: process.env.FEISHU_BITABLE_APP_TOKEN || 'J5TVb7bHLaI06PsgH93cA7Munxf',
   tables: {
-    suppliers: 'tblwsO01PKRwtixX',
-    domesticConfigs: 'tblKTtaWig45McGC',
-    usConfigs: 'tblQkEBpzurYQYfs',
-    contacts: 'tbl1LL50RKhrUCkO',
-    warehouses: 'tblY9xJsUo0ZbEgY',
-    exceptions: 'tblczwSM3vnqQdui',
-    registrations: 'tbleHbXRI60PTp8M',
-    permissions: 'tblvWkFJRV7sQ9Pn',
-    exportAudits: 'tblHt9MAjmVIsyo9',
+    suppliers: process.env.BITABLE_MAIN || 'tblndLOjuXpeDmwu',
+    configs: process.env.BITABLE_CONFIG || 'tbl7G3TXyWLmFstG',
+    contacts: process.env.BITABLE_CONTACT || 'tblX3SBTCWN68ZVd',
+    exceptions: process.env.BITABLE_EXCEPTION || 'tblhWiDbh7QT41rq',
+    registrations: process.env.BITABLE_APPLY || 'tbl1ZKWtQriAItY1',
   },
 }

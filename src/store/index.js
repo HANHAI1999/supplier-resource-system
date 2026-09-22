@@ -227,6 +227,25 @@ export function useStore() {
   return state
 }
 
+// 从后端 API 同步飞书数据（后端代理飞书；失败时保留本地数据，静默降级）
+export async function syncFromApi() {
+  try {
+    const base = (import.meta.env.VITE_API_BASE || '').replace(/\/$/, '')
+    const [s, e] = await Promise.all([
+      fetch(`${base}/api/suppliers`).then((r) => r.json()),
+      fetch(`${base}/api/exceptions`).then((r) => r.json()),
+    ])
+    if (Array.isArray(s?.items)) {
+      state.suppliers = s.items
+      state.cloudLoaded = true
+    }
+    if (Array.isArray(e?.items)) state.exceptions = e.items
+    return { ok: true }
+  } catch {
+    return { ok: false }
+  }
+}
+
 // 云端数据只用于正式读取；迁移确认前不覆盖本地原型数据。
 export function setCloudSuppliers(suppliers) {
   state.cloudSuppliers = suppliers
